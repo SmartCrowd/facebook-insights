@@ -195,7 +195,7 @@ class InsightsSelection(Selection):
             rows = dataset['values']            
             for row in rows:
                 date = self._get_row_date(row)
-                value = row['value']
+                value = row.get('value', '')
                 record = utils.record(metrics)
                 period = data.setdefault(date, record)
                 period[metric] = value
