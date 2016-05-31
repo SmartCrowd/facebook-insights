@@ -18,11 +18,11 @@ class Selection(object):
         self.edge = edge
         self.graph = edge.graph
         self.meta = {
-            'since': utils.date.COMMON_ERA, 
-            'until': datetime.now(), 
+            'since': utils.date.COMMON_ERA,
+            'until': datetime.now(),
         }
         self.params = {
-            'page': False, 
+            'page': False,
         }
 
     def clone(self):
@@ -137,7 +137,7 @@ class InsightsSelection(Selection):
             seconds = (self.meta['until'] - self.meta['since']).total_seconds()
             return math.ceil(seconds / 60 / 60 / 24)
         else:
-            return 3        
+            return 3
 
     @property
     def is_valid(self):
@@ -155,17 +155,17 @@ class InsightsSelection(Selection):
         if end_time:
             end_time = utils.date.parse(end_time)
         else:
-            end_time = 'lifetime'  
+            end_time = 'lifetime'
 
         return end_time
 
     def get_raw(self):
         if 'metrics' in self.meta:
             metrics = [{'relative_url': metric} for metric in self.meta['metrics']]
-            results = self.graph.all('insights', 
+            results = self.graph.all('insights',
                 metrics, **self.params)
         else:
-            results = [self.graph.get('insights', 
+            results = [self.graph.get('insights',
                 **self.params)]
 
         return results
@@ -182,7 +182,11 @@ class InsightsSelection(Selection):
         results = self.get_raw()
         datasets = []
         for result in results:
-            datasets.extend(result['data'])
+            try:
+                datasets.extend(result['data'])
+            except TypeError as e:
+                print(e)
+                pass
 
         metrics = set()
         for dataset in datasets:
@@ -192,7 +196,7 @@ class InsightsSelection(Selection):
         data = {}
         for dataset in datasets:
             metric = dataset['name']
-            rows = dataset['values']            
+            rows = dataset['values']
             for row in rows:
                 date = self._get_row_date(row)
                 value = row.get('value', '')
@@ -206,14 +210,14 @@ class InsightsSelection(Selection):
 
     def get(self):
         results = self.get_rows()
-        # when a single metric is requested (and not 
-        # wrapped in a list), we return a simplified 
+        # when a single metric is requested (and not
+        # wrapped in a list), we return a simplified
         # data format
         if self.meta.get('single', False):
             metric = self.meta['metrics'][0]
             results = [getattr(row, metric) for row in results]
 
-        # when a lifetime metric is requested, 
+        # when a lifetime metric is requested,
         # we can simplify further
         if self.params.get('period') == 'lifetime':
             results = results[0]
@@ -250,15 +254,15 @@ class InsightsSelection(Selection):
 
         if self.has_daterange:
             date = ' from {} to {}'.format(
-                self.meta['since'].date().isoformat(), 
-                self.meta['until'].date().isoformat(), 
+                self.meta['since'].date().isoformat(),
+                self.meta['until'].date().isoformat(),
                 )
         else:
             date = ''
 
         return u"<Insights for '{}' ({}{})>".format(
             repr(self.edge.name), metrics, date)
-        
+
 
 class Picture(object):
     def __init__(self, post, raw):
@@ -267,7 +271,7 @@ class Picture(object):
         self.raw = self.url = raw
         self.parsed_url = utils.url.parse.urlparse(self.raw)
         self.qs = utils.url.parse.parse_qs(self.parsed_url.query)
-        
+
         if 'url' in self.qs:
             self.origin = self.qs['url'][0]
             self.width = self.qs['w'][0]
@@ -286,8 +290,8 @@ class Picture(object):
             dimensions = ''
 
         return u"<Picture: {name}{dimensions}>".format(
-            name=self.basename, 
-            dimensions=dimensions, 
+            name=self.basename,
+            dimensions=dimensions,
         )
 
 
